@@ -50,16 +50,16 @@ Adim adim anlat.
 ### Prompt:
 ```
 Python projesi icin klasor yapisi olustur.
-Proje adi: smart-laundry
+Proje adi: smart_laundry
 Icerik:
-- backend/ (Flask API)
+- backend/ (FastAPI API)
 - mobile/ (Kivy uygulama)
-- hardware/ (ESP32 kodlari)
+- iot/ (ESP32 MicroPython kodlari)
 - tests/ (test dosyalari)
 - docs/ (dokumantasyon)
 
-Her klasorde __init__.py ve README.md olsun.
-Bana terminal komutlarini ver (Windows icin).
+Her klasorde README.md olsun.
+Klasorleri ve bos README dosyalarini olusturmak icin Windows terminal komutlarini ver.
 ```
 
 ---

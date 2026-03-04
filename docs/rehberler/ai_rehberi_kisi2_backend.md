@@ -98,43 +98,43 @@ Windows komutlarini ver.
 
 ---
 
-# HAFTA 2: Flask Temelleri
+# HAFTA 2: FastAPI Temelleri
 
-## Gorev 2.1: Flask Nedir?
+## Gorev 2.1: FastAPI Nedir?
 
 ### Prompt:
 ```
-Flask nedir?
+FastAPI nedir?
 Web framework ne demek?
-Django'dan farki ne?
-Neden Flask sectik?
+Django'tan farki ne?
+Neden FastAPI sectik?
 Basit ve kisa anlat.
 ```
 
 ---
 
-## Gorev 2.2: Hello World
+## Gorev 2.2: Hello World (FastAPI)
 
 ### Prompt:
 ```
-Flask ile "Hello World" uygulamasi yaz.
-Dosya adi: app.py
-http://localhost:5000 adresinde calissin.
-Kodu yaz ve nasil calistirilacagini anlat.
+FastAPI ile "Hello World" API'si yaz.
+Dosya adi: main.py
+GET / endpoint'i "Hello World" dondursun.
+Uvicorn ile nasil calistirilacagini anlat.
 ```
 
 ### Beklenen Kod:
 ```python
-from flask import Flask
+from fastapi import FastAPI
 
-app = Flask(__name__)
+app = FastAPI()
 
-@app.route('/')
+@app.get("/")
 def hello():
-    return 'Hello World!'
+    return {"message": "Hello World!"}
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Calistirma (terminal):
+# uvicorn main:app --reload
 ```
 
 ---
@@ -143,13 +143,13 @@ if __name__ == '__main__':
 
 ### Prompt:
 ```
-Flask'ta route ne demek?
+FastAPI'de route ne demek?
 Endpoint ne demek?
-Farkli route'lar nasil tanimlanir?
+Decorator (@app.get, @app.post) nasil kullanilir?
 Ornekler ver:
-- / -> Ana sayfa
-- /about -> Hakkinda
-- /api/test -> API test
+- GET / -> Ana sayfa
+- GET /about -> Hakkinda
+- GET /api/test -> API test
 ```
 
 ---
@@ -158,8 +158,8 @@ Ornekler ver:
 
 ### Prompt:
 ```
-Flask'ta JSON response nasil dondurulur?
-jsonify fonksiyonunu acikla.
+FastAPI'de JSON response nasil dondurulur?
+Pydantic model veya dict dondurmenin farki ne?
 Ornek endpoint yaz:
 GET /api/status -> {"status": "ok", "message": "Server calisiyor"}
 ```
@@ -172,7 +172,7 @@ GET /api/status -> {"status": "ok", "message": "Server calisiyor"}
 ```
 Postman nedir? Ne ise yarar?
 Windows'a nasil kurulur?
-Flask API'yi Postman ile nasil test ederim?
+FastAPI'yi Postman ile nasil test ederim?
 GET ve POST istegi nasil yapilir?
 Adim adim anlat.
 ```
@@ -181,14 +181,14 @@ Adim adim anlat.
 
 # HAFTA 3: Veritabani ve SQLAlchemy
 
-## Gorev 3.1: SQLAlchemy Nedir?
+## Gorev 3.1: SQLAlchemy ve FastAPI
 
 ### Prompt:
 ```
 SQLAlchemy nedir?
 ORM ne demek?
 Neden direkt SQL yazmak yerine ORM kullaniriz?
-Flask-SQLAlchemy nedir?
+FastAPI ile SQLAlchemy nasil birlikte kullanilir? (SessionLocal, dependency)
 Basit anlat.
 ```
 
@@ -198,20 +198,24 @@ Basit anlat.
 
 ### Prompt:
 ```
-Flask'ta SQLite veritabani nasil baglanir?
-Flask-SQLAlchemy kullan.
-app.py'de konfigurasyonu yaz.
+FastAPI ile SQLite veritabani nasil baglanir?
+SQLAlchemy kullan.
 Veritabani dosyasi: laundry.db
+SessionLocal ve Base yapisini acikla.
 ```
 
 ### Beklenen Kod:
 ```python
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///laundry.db'
-db = SQLAlchemy(app)
+SQLALCHEMY_DATABASE_URL = "sqlite:///./laundry.db"
+
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
 ```
 
 ---
@@ -220,7 +224,7 @@ db = SQLAlchemy(app)
 
 ### Prompt:
 ```
-Flask-SQLAlchemy ile Machine modeli olustur.
+SQLAlchemy ile Machine modeli olustur (FastAPI ile kullanilacak).
 Dosya: models.py
 Alanlar:
 - id (integer, primary key, auto increment)
@@ -238,20 +242,18 @@ Modeli yaz ve acikla.
 
 ### Prompt:
 ```
-Flask-SQLAlchemy ile tablo nasil olusturulur?
-db.create_all() nasil kullanilir?
-Terminalde Python shell ile nasil yaparim?
-Adim adim anlat.
+SQLAlchemy Base metadata'sini kullanarak tablolar nasil olusturulur?
+engine ve Base.metadata.create_all nasil kullanilir?
+Python shell veya kucuk bir script ile adim adim anlat.
 ```
 
 ### Beklenen Komutlar:
 ```python
-from app import app, db
+from database import engine, Base
 from models import Machine
 
-with app.app_context():
-    db.create_all()
-    print("Tablolar olusturuldu!")
+Base.metadata.create_all(bind=engine)
+print("Tablolar olusturuldu!")
 ```
 
 ---
@@ -294,9 +296,9 @@ Her biri icin gercek hayat ornegi ver.
 
 ### Prompt:
 ```
-Flask ile GET /api/machines endpoint'i yaz.
+FastAPI ile GET /api/machines endpoint'i yaz.
 SQLite veritabanindan Machine tablosunu cek.
-JSON olarak dondur.
+Pydantic response modeli kullanarak JSON dondur.
 Ornek response:
 {
   "machines": [
@@ -308,18 +310,32 @@ Ornek response:
 
 ### Beklenen Kod:
 ```python
-@app.route('/api/machines', methods=['GET'])
-def get_machines():
-    machines = Machine.query.all()
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from database import SessionLocal
+from models import Machine
+
+router = APIRouter()
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.get("/api/machines")
+def get_machines(db: Session = Depends(get_db)):
+    machines = db.query(Machine).all()
     result = []
     for m in machines:
         result.append({
-            'id': m.id,
-            'name': m.name,
-            'status': m.status,
-            'last_update': m.last_update.isoformat() if m.last_update else None
+            "id": m.id,
+            "name": m.name,
+            "status": m.status,
+            "last_update": m.last_update.isoformat() if m.last_update else None,
         })
-    return jsonify({'machines': result})
+    return {"machines": result}
 ```
 
 ---
@@ -328,10 +344,10 @@ def get_machines():
 
 ### Prompt:
 ```
-Flask ile GET /api/machines/<id> endpoint'i yaz.
-URL'den id parametresini al.
+FastAPI ile GET /api/machines/{id} endpoint'ini yaz.
+Path parametresinden id'yi al.
 Veritabanindan o ID'li makineyi getir.
-Bulunamazsa 404 hatasi dondur.
+Bulunamazsa HTTPException ile 404 dondur.
 JSON response ornegi ver.
 ```
 
@@ -341,7 +357,7 @@ JSON response ornegi ver.
 
 ### Prompt:
 ```
-Flask ile PUT /api/machines/<id>/status endpoint'i yaz.
+FastAPI ile PUT /api/machines/{id}/status endpoint'ini yaz.
 Request body:
 {"status": "RUNNING"}
 Makine durumunu guncelle.
@@ -356,10 +372,10 @@ Hata: 404 (makine yok) veya 400 (gecersiz status)
 
 ### Prompt:
 ```
-Flask'ta hata yonetimi nasil yapilir?
-404 Not Found nasil dondurulur?
-400 Bad Request nasil dondurulur?
-500 Internal Server Error nasil yakalanir?
+FastAPI'de hata yonetimi nasil yapilir?
+HTTPException nasil kullanilir?
+404 Not Found ve 400 Bad Request nasil dondurulur?
+Global exception handler nasil yazilir?
 Ornek kodlar ver.
 ```
 
@@ -369,9 +385,9 @@ Ornek kodlar ver.
 
 ### Prompt:
 ```
-Flask'ta route'lari ayri dosyaya nasil tasarim?
-Blueprint nedir?
-app.py'deki machine endpoint'lerini
+FastAPI'de route'lari ayri dosyaya nasil tasarim?
+APIRouter nedir?
+main.py'deki machine endpoint'lerini
 routes/machines.py dosyasina tasi.
 Dosya yapisini ve kodu goster.
 ```
@@ -444,8 +460,8 @@ Adimlar:
 1. device_id'ye gore makineyi bul
 2. status'u guncelle
 3. last_update'i simdi yap
-4. db.session.commit()
-Flask-SQLAlchemy ile kodu yaz.
+4. Degisiklikleri commit et.
+SQLAlchemy Session ile kodu yaz (FastAPI icin).
 ```
 
 ---
@@ -454,10 +470,10 @@ Flask-SQLAlchemy ile kodu yaz.
 
 ### Prompt:
 ```
-Flask uygulamasiyla birlikte calisan MQTT handler yaz.
+FastAPI uygulamasi ile birlikte calisan MQTT handler yaz.
 Dosya: services/mqtt_handler.py
 Threading kullanarak ayri thread'de calissin.
-Flask app context'i icerisinde veritabani erissin.
+Veritabana erisim icin Session dependency veya paylasilan SessionLocal kullan.
 start_mqtt_listener() fonksiyonu yaz.
 ```
 
@@ -524,10 +540,10 @@ Kurallar:
 
 ### Prompt:
 ```
-Flask'ta CORS nedir?
+FastAPI'de CORS nedir?
 Neden gerekli?
-flask-cors nasil kurulur ve kullanilir?
-Tum origin'lere izin ver.
+fastapi.middleware.cors ile CORS nasil eklenir?
+Tum origin'lere (gecici olarak) nasil izin verilir?
 Kodu goster.
 ```
 
@@ -559,7 +575,7 @@ Ornek: GET /api/machines
 
 ### Prompt:
 ```
-Flask-SQLAlchemy ile Queue (sira) modeli olustur.
+SQLAlchemy ile Queue (sira) modeli olustur (FastAPI ile kullanilacak).
 Alanlar:
 - id (integer, primary key)
 - machine_id (integer, foreign key -> Machine.id)
@@ -600,7 +616,7 @@ with app.app_context():
 
 ### Prompt:
 ```
-Flask ile POST /api/queue endpoint'i yaz.
+FastAPI ile POST /api/queue endpoint'ini yaz.
 Request body:
 {
   "machine_id": 1,
@@ -618,7 +634,7 @@ Ayni ogrenci ayni makineye iki kez eklenemesin.
 
 ### Prompt:
 ```
-Flask ile GET /api/queue/machine/<id> endpoint'i yaz.
+FastAPI ile GET /api/queue/machine/{id} endpoint'ini yaz.
 O makinenin sira listesini dondur.
 Sadece "WAITING" durumundakileri getir.
 Siralama: created_at (en eski en basta)
@@ -631,7 +647,7 @@ Response ornegi ver.
 
 ### Prompt:
 ```
-Flask ile DELETE /api/queue/<id> endpoint'i yaz.
+FastAPI ile DELETE /api/queue/{id} endpoint'ini yaz.
 Sira kaydini iptal et.
 Status'u "CANCELLED" yap (silme yerine guncelle).
 Sadece kendi kaydini iptal edebilsin (student_id kontrolu).
@@ -663,7 +679,7 @@ Sira sistemi icin timeout ekle.
 1. Status'u "EXPIRED" yap
 2. Siradaki sonraki kisiye gec
 Bu kontrolu periyodik olarak calistir.
-Flask-APScheduler veya threading.Timer kullan.
+APScheduler veya asyncio tabanli zamanlayici kullan.
 ```
 
 ---
@@ -674,8 +690,8 @@ Flask-APScheduler veya threading.Timer kullan.
 
 ### Prompt:
 ```
-Flask API'yi nasil test ederim?
-Flask test client nedir?
+FastAPI API'yi nasil test ederim?
+fastapi.testclient nedir?
 pytest ile nasil kullanilir?
 Basit bir test ornegi ver.
 ```
@@ -686,7 +702,7 @@ Basit bir test ornegi ver.
 
 ### Prompt:
 ```
-Flask API icin pytest testleri yaz.
+FastAPI API icin pytest testleri yaz.
 Test edilecek endpoint'ler:
 1. GET /api/machines -> 200 + liste
 2. GET /api/machines/999 -> 404
@@ -735,7 +751,7 @@ Nasil cozerim?"
 ```
 Prompt: "Frontend'den API'ye istek atinca 'CORS error' aliyorum.
 Access-Control-Allow-Origin hatasi.
-Flask'ta CORS nasil aktif edilir?"
+FastAPI'de CORS nasil aktif edilir?"
 ```
 
 ## Hata 4: JSON Decode Error
@@ -747,7 +763,7 @@ bytes'i string'e cevirip parse etmem mi lazim?"
 
 ## Hata 5: Circular Import
 ```
-Prompt: "Flask'ta 'ImportError: cannot import name' hatasi aliyorum.
+Prompt: "FastAPI/uvicorn calistirirken 'ImportError: cannot import name' hatasi aliyorum.
 models.py ve app.py birbirini import ediyor.
 Circular import nasil cozulur?"
 ```
@@ -762,7 +778,7 @@ Takildiginda su formati kullan:
 SORUN: [Ne yapmaya calisiyorsun]
 HATA: [Tam hata mesaji]
 DENEDIKLERIM: [Simdiye kadar ne denedin]
-ORTAM: Python 3.12, Flask 3.x, Windows
+ORTAM: Python 3.12, FastAPI, Windows
 KOD: [Ilgili kod parcasi]
 ```
 

@@ -423,12 +423,12 @@ Orneklerle anlat.
 
 # HAFTA 5: API Testleri
 
-## Gorev 5.1: Flask Test Client
+## Gorev 5.1: FastAPI TestClient
 
 ### Prompt:
 ```
-Flask uygulamasini nasil test ederim?
-Flask test client nedir?
+FastAPI uygulamasini nasil test ederim?
+fastapi.testclient.TestClient nedir?
 app.test_client() nasil kullanilir?
 Basit ornek: GET / endpoint testi.
 ```
@@ -439,7 +439,7 @@ Basit ornek: GET / endpoint testi.
 
 ### Prompt:
 ```
-Flask API testleri icin dosya olustur.
+FastAPI API testleri icin dosya olustur.
 Dosya: tests/test_api.py
 Icerik:
 - Test client fixture
@@ -602,7 +602,7 @@ Ornek bug raporu ver.
 **Beklenen:** Durum "RUNNING" olmali
 **Gerceklesen:** Durum hala "AVAILABLE"
 
-**Ortam:** Python 3.12, Flask 3.0, Windows
+**Ortam:** Python 3.12, FastAPI, Windows
 
 **Log:**
 [hata mesaji varsa]

@@ -1,0 +1,52 @@
+# Virtual Environment - ASLA GIT'E EKLEME!
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+
+# Database
+*.db
+*.sqlite3
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ESP32 / MicroPython
+*.bin
+*.elf
+
+# Cursor IDE
+.cursor/
+
+# Temporary files
+*.tmp
+*.bak

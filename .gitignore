@@ -2,6 +2,7 @@
 venv/
 .venv/
 env/
+ENV/
 
 # Python cache
 __pycache__/
@@ -46,6 +47,8 @@ htmlcov/
 
 # Cursor IDE
 .cursor/
+.cursorignore
+.cursorindexingignore
 
 # Temporary files
 *.tmp

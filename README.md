@@ -65,8 +65,8 @@ Her takım üyesi kendi AI rehberini takip eder:
 
 ### 1. Repo'yu Klonla
 ```bash
-git clone https://github.com/KULLANICI/smart-laundry.git
-cd smart-laundry
+git clone https://github.com/firatbmu/smart_laundry.git
+cd smart_laundry
 ```
 
 ### 2. Virtual Environment Oluştur
@@ -84,7 +84,7 @@ pip install -r requirements.txt
 ## 📁 Klasör Yapısı
 
 ```
-SmartLaundry/
+smart_laundry/
 ├── backend/          # Flask API
 ├── mobile/           # Kivy uygulaması
 ├── iot/              # ESP32 MicroPython kodları

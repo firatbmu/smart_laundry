@@ -8,9 +8,7 @@ from models import Machine
 Base.metadata.create_all(bind=engine)
 
 MACHINES = [
-    Machine(name="Makine 1", esp_device_id="esp32_001", status="AVAILABLE"),
-    Machine(name="Makine 2", esp_device_id="esp32_002", status="AVAILABLE"),
-    Machine(name="Makine 3", esp_device_id="esp32_003", status="AVAILABLE"),
+    Machine(name="Makine 1", esp_device_id="esp32_smart_laundry_001", status="AVAILABLE"),
 ]
 
 db = SessionLocal()
@@ -20,9 +18,9 @@ try:
         if not exists:
             db.add(m)
     db.commit()
-    print("✅ Başlangıç makineleri eklendi.")
+    print("Baslangic makineleri eklendi.")
 except Exception as e:
     db.rollback()
-    print(f"❌ Hata: {e}")
+    print(f"Hata: {e}")
 finally:
     db.close()

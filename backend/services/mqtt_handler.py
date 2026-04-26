@@ -11,7 +11,7 @@ from services.analysis import detect_status
 
 logger = logging.getLogger(__name__)
 
-BROKER = "test.mosquitto.org"
+BROKER = "broker.hivemq.com"
 PORT = 1883
 TOPIC = "laundry/machine/#"
 HISTORY_SIZE = 5  # Gürültü filtresi: son kaç ölçümün ortalaması alınsın

@@ -15,10 +15,9 @@ def calculate_vibration(ax: float, ay: float, az: float) -> float:
 def detect_status(vibration_history: list[float]) -> str:
     """Son N titreşim ölçümünün ortalamasına göre makine durumunu tespit et.
 
-    Eşikler:
-      - ort > 1.5  → RUNNING   (makine çalışıyor)
-      - ort < 0.5  → AVAILABLE (makine boş/duruyor)
-      - arada      → FINISHING (bitiyor olabilir)
+    Eşik (IoT kodu ile senkronize):
+      - ort > 0.150 → RUNNING   (makine çalışıyor)
+      - ort ≤ 0.150 → AVAILABLE (makine boş/duruyor)
     """
     if not vibration_history:
         return "AVAILABLE"
@@ -26,9 +25,7 @@ def detect_status(vibration_history: list[float]) -> str:
     series = pd.Series(vibration_history, dtype=float)
     avg = series.mean()
 
-    if avg > 1.5:
+    if avg > 0.150:
         return "RUNNING"
-    elif avg < 0.5:
-        return "AVAILABLE"
     else:
-        return "FINISHING"
+        return "AVAILABLE"

@@ -8,7 +8,7 @@ from models import Machine
 Base.metadata.create_all(bind=engine)
 
 MACHINES = [
-    Machine(name="Makine 1", esp_device_id="esp32_smart_laundry_001", status="AVAILABLE"),
+    Machine(name="Machine 1", esp_device_id="esp32_smart_laundry_001", status="AVAILABLE"),
 ]
 
 db = SessionLocal()

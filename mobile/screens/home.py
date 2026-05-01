@@ -15,7 +15,7 @@ class HomeScreen(MDScreen):
         root = MDBoxLayout(orientation="vertical")
 
         toolbar = MDTopAppBar(
-            title="Akıllı Çamaşırhane",
+            title="Smart Laundry",
             md_bg_color=(0.129, 0.588, 0.953, 1),
         )
         root.add_widget(toolbar)
@@ -27,7 +27,7 @@ class HomeScreen(MDScreen):
         )
 
         body.add_widget(MDLabel(
-            text="Hoş Geldiniz",
+            text="Welcome",
             font_style="H4",
             bold=True,
             halign="center",
@@ -36,7 +36,7 @@ class HomeScreen(MDScreen):
         ))
 
         body.add_widget(MDLabel(
-            text="Çamaşır makinelerinin durumunu\ngörüntüleyin ve sıraya girin.",
+            text="View machine status\nand join the queue.",
             font_style="Body1",
             halign="center",
             theme_text_color="Hint",
@@ -45,7 +45,7 @@ class HomeScreen(MDScreen):
         ))
 
         machines_btn = MDRaisedButton(
-            text="MAKİNE DURUMU",
+            text="MACHINE STATUS",
             md_bg_color=(0.129, 0.588, 0.953, 1),
             size_hint_x=1,
             height=dp(52),

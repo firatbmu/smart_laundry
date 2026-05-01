@@ -27,7 +27,7 @@ class QueueScreen(MDScreen):
         root = MDBoxLayout(orientation="vertical")
 
         self.toolbar = MDTopAppBar(
-            title="Sıraya Gir",
+            title="Join Queue",
             left_action_items=[["arrow-left", lambda x: self._go_back()]],
             md_bg_color=(0.129, 0.588, 0.953, 1),
         )
@@ -50,7 +50,7 @@ class QueueScreen(MDScreen):
             md_bg_color=(0.95, 0.97, 1, 1),
         )
         self.machine_name_label = MDLabel(
-            text="Makine seçilmedi",
+            text="No machine selected",
             font_style="H6",
             bold=True,
             size_hint_y=None,
@@ -69,8 +69,8 @@ class QueueScreen(MDScreen):
 
         # Öğrenci numarası alanı
         self.student_input = MDTextField(
-            hint_text="Öğrenci numaranız",
-            helper_text="Örn: 2021123456",
+            hint_text="Student ID",
+            helper_text="e.g. 2021123456",
             helper_text_mode="on_focus",
             icon_right="account",
             size_hint_y=None,
@@ -80,7 +80,7 @@ class QueueScreen(MDScreen):
 
         # Sıraya gir butonu
         self.join_btn = MDRaisedButton(
-            text="SIRAYA GİR",
+            text="JOIN QUEUE",
             md_bg_color=(0.129, 0.588, 0.953, 1),
             size_hint_x=1,
             height=dp(48),
@@ -115,7 +115,7 @@ class QueueScreen(MDScreen):
             height=dp(28),
         )
         self.cancel_btn = MDFlatButton(
-            text="SIRAYI İPTAL ET",
+            text="CANCEL QUEUE",
             theme_text_color="Custom",
             text_color=(0.8, 0.1, 0.1, 1),
             on_release=self._on_cancel,
@@ -135,10 +135,10 @@ class QueueScreen(MDScreen):
     def set_machine(self, machine_data):
         self._machine = machine_data
         from components.machine_card import STATUS_LABELS
-        self.machine_name_label.text = machine_data.get("name", "Makine")
+        self.machine_name_label.text = machine_data.get("name", "Machine")
         status = machine_data.get("status", "")
-        self.machine_status_label.text = f"Durum: {STATUS_LABELS.get(status, status)}"
-        self.toolbar.title = f"Sıra — {machine_data.get('name', '')}"
+        self.machine_status_label.text = f"Status: {STATUS_LABELS.get(status, status)}"
+        self.toolbar.title = f"Queue — {machine_data.get('name', '')}"
         self._my_queue_entry = None
         self.queue_status_card.opacity = 0
         self.join_btn.disabled = False
@@ -147,7 +147,7 @@ class QueueScreen(MDScreen):
     def _on_join(self, *args):
         student_id = self.student_input.text.strip()
         if not student_id:
-            Snackbar(text="Lütfen öğrenci numaranızı girin.").open()
+            Snackbar(text="Please enter your student ID.").open()
             return
         if not self._machine:
             return
@@ -164,27 +164,27 @@ class QueueScreen(MDScreen):
 
     def _on_join_result(self, result, error, student_id):
         if error:
-            Snackbar(text=f"Hata: {error}").open()
+            Snackbar(text=f"Error: {error}").open()
             self.join_btn.disabled = False
         else:
             self._my_queue_entry = result
             position = result.get("position", "?")
-            self.queue_pos_label.text = f"Sıra numaranız: {position}"
-            self.queue_info_label.text = f"Öğrenci: {student_id}"
+            self.queue_pos_label.text = f"Your position: {position}"
+            self.queue_info_label.text = f"Student: {student_id}"
             self.queue_status_card.opacity = 1
             self.join_btn.disabled = True
-            Snackbar(text="Sıraya başarıyla girdiniz!").open()
+            Snackbar(text="Successfully joined the queue!").open()
 
     def _on_cancel(self, *args):
         if not self._my_queue_entry:
             return
         self._dialog = MDDialog(
-            title="Sırayı İptal Et",
-            text="Sıradan çıkmak istediğinize emin misiniz?",
+            title="Cancel Queue",
+            text="Are you sure you want to leave the queue?",
             buttons=[
-                MDFlatButton(text="VAZGEÇ", on_release=lambda x: self._dialog.dismiss()),
+                MDFlatButton(text="NO", on_release=lambda x: self._dialog.dismiss()),
                 MDRaisedButton(
-                    text="İPTAL ET",
+                    text="YES, CANCEL",
                     md_bg_color=(0.8, 0.1, 0.1, 1),
                     on_release=self._do_cancel,
                 ),
@@ -210,9 +210,9 @@ class QueueScreen(MDScreen):
             self._my_queue_entry = None
             self.queue_status_card.opacity = 0
             self.join_btn.disabled = False
-            Snackbar(text="Sıra iptal edildi.").open()
+            Snackbar(text="Queue canceled.").open()
         else:
-            Snackbar(text=f"İptal başarısız: {error}").open()
+            Snackbar(text=f"Cancel failed: {error}").open()
 
     def _go_back(self):
         self.manager.current = "machine_list"

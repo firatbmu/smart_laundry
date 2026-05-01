@@ -11,7 +11,7 @@ Window.size = (360, 640)
 
 class SmartLaundryApp(MDApp):
     def build(self):
-        self.title = "Akıllı Çamaşırhane"
+        self.title = "Smart Laundry"
         self.theme_cls.primary_palette = "Blue"
         self.theme_cls.theme_style = "Light"
 

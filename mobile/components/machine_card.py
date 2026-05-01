@@ -12,10 +12,10 @@ STATUS_COLORS = {
 }
 
 STATUS_LABELS = {
-    "AVAILABLE": "Müsait",
-    "RUNNING":   "Çalışıyor",
-    "FINISHING": "Bitiyor",
-    "FINISHED":  "Bitti",
+    "AVAILABLE": "Available",
+    "RUNNING":   "Running",
+    "FINISHING": "Finishing",
+    "FINISHED":  "Finished",
 }
 
 
@@ -53,7 +53,7 @@ class MachineCard(MDCard):
         # Orta: isim + durum
         info_box = MDBoxLayout(orientation="vertical", spacing=dp(2))
         info_box.add_widget(MDLabel(
-            text=self.machine_data.get("name", "Makine"),
+            text=self.machine_data.get("name", "Machine"),
             font_style="Subtitle1",
             bold=True,
             size_hint_y=None,

@@ -22,7 +22,7 @@ class MachineListScreen(MDScreen):
         root = MDBoxLayout(orientation="vertical")
 
         toolbar = MDTopAppBar(
-            title="Çamaşır Makineleri",
+            title="Washing Machines",
             left_action_items=[["arrow-left", lambda x: self._go_back()]],
             right_action_items=[["refresh", lambda x: self.load_machines()]],
             md_bg_color=(0.129, 0.588, 0.953, 1),
@@ -74,7 +74,7 @@ class MachineListScreen(MDScreen):
 
         if not machines:
             self.card_list.add_widget(MDLabel(
-                text="Backend'e bağlanılamadı veya makine yok.",
+                text="Cannot connect to backend or no machines found.",
                 halign="center",
                 theme_text_color="Hint",
                 size_hint_y=None,

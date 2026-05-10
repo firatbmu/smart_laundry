@@ -5,8 +5,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from database import Base, engine
-from routes import machines, queue
+from routes import machines, queue, auth
 from services.mqtt_handler import start_mqtt_listener
+from services.queue_notifier import start_queue_notifier
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,6 +24,9 @@ async def lifespan(app: FastAPI):
 
     logger.info("MQTT listener başlatılıyor...")
     start_mqtt_listener()
+
+    logger.info("SMS queue notifier başlatılıyor...")
+    start_queue_notifier()
 
     yield
     # ── Shutdown (gerekirse cleanup buraya) ──────────────────────────────────
@@ -44,6 +48,7 @@ app.add_middleware(
 
 app.include_router(machines.router)
 app.include_router(queue.router)
+app.include_router(auth.router)
 
 
 @app.get("/", tags=["health"])

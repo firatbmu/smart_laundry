@@ -1,11 +1,32 @@
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from database import Base
 
 VALID_STATUSES = {"AVAILABLE", "RUNNING", "FINISHING", "FINISHED"}
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tc = Column(String(11), unique=True, nullable=False)
+    ad = Column(String(50), nullable=False)
+    soyad = Column(String(50), nullable=False)
+    telefon = Column(String(15), nullable=False)
+    sifre_hash = Column(String(128), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "tc": self.tc,
+            "ad": self.ad,
+            "soyad": self.soyad,
+            "telefon": self.telefon,
+        }
 
 
 class Machine(Base):
@@ -36,8 +57,8 @@ class Queue(Base):
     machine_id = Column(Integer, ForeignKey("machines.id"), nullable=False)
     student_id = Column(String(20), nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    # WAITING -> NOTIFIED -> COMPLETED | CANCELLED | EXPIRED
     status = Column(String(20), default="WAITING", nullable=False)
+    sms_sent = Column(Boolean, default=False, nullable=False)
 
     machine = relationship("Machine", back_populates="queue_entries")
 

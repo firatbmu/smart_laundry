@@ -210,9 +210,9 @@ class TestAnalysis:
         from services.analysis import detect_status
         assert detect_status([0.1, 0.2, 0.15, 0.1, 0.05]) == "AVAILABLE"
 
-    def test_detect_finishing(self):
+    def test_detect_orta_titresim_running(self):
         from services.analysis import detect_status
-        assert detect_status([0.8, 0.9, 1.0, 0.7, 0.8]) == "FINISHING"
+        assert detect_status([0.8, 0.9, 1.0, 0.7, 0.8]) == "RUNNING"
 
     def test_bos_gecmis(self):
         from services.analysis import detect_status

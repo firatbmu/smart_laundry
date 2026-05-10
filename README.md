@@ -6,12 +6,12 @@ Yurt çamaşırhanelerindeki makinelerin durumunu gerçek zamanlı takip eden Io
 
 Öğrenciler, mobil uygulama üzerinden çamaşır makinelerinin durumunu (boş/dolu/bitti) anlık olarak görebilir ve gerektiğinde sıraya girebilir.
 
-## 🏗️ Sistem Mimarisi
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   ÇAMAŞIR       │     │    ESP32 +      │     │     MQTT        │
-│   MAKİNESİ      │────▶│    ADXL345      │────▶│    BROKER       │
+│    WASHING      │     │     ESP32 +     │     │     MQTT        │
+│    MACHINE      │────▶│    ADXL345      │────▶│    BROKER      │
 └─────────────────┘     └─────────────────┘     └────────┬────────┘
                                                          │
                                                          ▼

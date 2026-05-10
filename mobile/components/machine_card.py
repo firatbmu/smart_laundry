@@ -69,12 +69,14 @@ class MachineCard(MDCard):
         ))
         self.add_widget(info_box)
 
-        # Sağ: sıraya gir butonu (sadece RUNNING veya FINISHING durumunda)
-        if status in ("RUNNING", "FINISHING") and self.on_queue_press:
-            queue_btn = MDIconButton(
-                icon="account-clock",
-                theme_icon_color="Custom",
-                icon_color=(0.129, 0.588, 0.953, 1),
+        # Sağ: sıraya gir butonu (tüm makinelerde göster)
+        if self.on_queue_press:
+            from kivymd.uix.button import MDRaisedButton
+            queue_btn = MDRaisedButton(
+                text="JOIN QUEUE",
+                md_bg_color=(0.129, 0.588, 0.953, 1),
+                size_hint=(None, None),
+                size=(dp(90), dp(36)),
                 pos_hint={"center_y": 0.5},
                 on_release=lambda x: self.on_queue_press(self.machine_data),
             )

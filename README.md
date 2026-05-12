@@ -1,10 +1,5 @@
-# 🧺 Smart Laundry - Akıllı Çamaşırhane Takip Sistemi
+# 🧺 Smart Laundry - Smart Laundry Tracking System
 
-Yurt çamaşırhanelerindeki makinelerin durumunu gerçek zamanlı takip eden IoT tabanlı sistem.
-
-## 🎯 Proje Özeti
-
-Öğrenciler, mobil uygulama üzerinden çamaşır makinelerinin durumunu (boş/dolu/bitti) anlık olarak görebilir ve gerektiğinde sıraya girebilir.
 
 ## 🏗️ System Architecture
 

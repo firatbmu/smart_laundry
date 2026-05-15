@@ -17,7 +17,7 @@
                                                         │
                                                         ▼
                                                ┌─────────────────┐
-                                               │  MOBİL UYGULAMA │
+                                               │  MOBILE APP     │
                                                │  (Kivy/KivyMD)  │
                                                └─────────────────┘
 ```

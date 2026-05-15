@@ -2,17 +2,19 @@ from threading import Thread
 
 from kivy.clock import Clock
 from kivy.metrics import dp
+from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.button import MDRaisedButton, MDFlatButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.card import MDCard
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.snackbar import Snackbar
-from kivymd.uix.textfield import MDTextField
+from kivymd.toast import toast
 from kivymd.uix.toolbar import MDTopAppBar
 
-from services.api import join_queue, get_machine_queue, leave_queue
+from services.api import join_queue, leave_queue, get_my_queue_entry
+
+REFRESH_INTERVAL = 5  # saniye
 
 
 class QueueScreen(MDScreen):
@@ -21,6 +23,7 @@ class QueueScreen(MDScreen):
         self._machine = None
         self._my_queue_entry = None
         self._dialog = None
+        self._refresh_event = None
         self._build_ui()
 
     def _build_ui(self):
@@ -29,6 +32,7 @@ class QueueScreen(MDScreen):
         self.toolbar = MDTopAppBar(
             title="Join Queue",
             left_action_items=[["arrow-left", lambda x: self._go_back()]],
+            right_action_items=[["refresh", lambda x: self._manual_refresh()]],
             md_bg_color=(0.129, 0.588, 0.953, 1),
         )
         root.add_widget(self.toolbar)
@@ -39,7 +43,6 @@ class QueueScreen(MDScreen):
             spacing=dp(16),
         )
 
-        # Makine bilgi kartı
         self.machine_card = MDCard(
             orientation="vertical",
             padding=dp(16),
@@ -67,28 +70,41 @@ class QueueScreen(MDScreen):
         self.machine_card.add_widget(self.machine_status_label)
         content.add_widget(self.machine_card)
 
-        # Öğrenci numarası alanı
-        self.student_input = MDTextField(
-            hint_text="Student ID",
-            helper_text="e.g. 2021123456",
-            helper_text_mode="on_focus",
-            icon_right="account",
+        self.user_info_card = MDCard(
+            orientation="vertical",
+            padding=dp(12),
+            radius=[dp(10)],
+            elevation=1,
             size_hint_y=None,
-            height=dp(56),
+            height=dp(60),
+            md_bg_color=(0.97, 0.97, 0.97, 1),
         )
-        content.add_widget(self.student_input)
+        self.user_label = MDLabel(
+            text="",
+            font_style="Body2",
+            size_hint_y=None,
+            height=dp(24),
+        )
+        self.tc_label = MDLabel(
+            text="",
+            font_style="Caption",
+            theme_text_color="Hint",
+            size_hint_y=None,
+            height=dp(20),
+        )
+        self.user_info_card.add_widget(self.user_label)
+        self.user_info_card.add_widget(self.tc_label)
+        content.add_widget(self.user_info_card)
 
-        # Sıraya gir butonu
         self.join_btn = MDRaisedButton(
             text="JOIN QUEUE",
             md_bg_color=(0.129, 0.588, 0.953, 1),
             size_hint_x=1,
-            height=dp(48),
+            height=dp(52),
             on_release=self._on_join,
         )
         content.add_widget(self.join_btn)
 
-        # Mevcut sıra durumu kartı (başlangıçta gizli)
         self.queue_status_card = MDCard(
             orientation="vertical",
             padding=dp(16),
@@ -142,38 +158,171 @@ class QueueScreen(MDScreen):
         self._my_queue_entry = None
         self.queue_status_card.opacity = 0
         self.join_btn.disabled = False
-        self.student_input.text = ""
 
-    def _on_join(self, *args):
-        student_id = self.student_input.text.strip()
-        if not student_id:
-            Snackbar(text="Please enter your student ID.").open()
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", None)
+        if user:
+            self.user_label.text = f"{user.get('ad', '')} {user.get('soyad', '')}"
+            self.tc_label.text = f"TC: {user.get('tc', '')}"
+
+    def on_enter(self):
+        """Ekrana her girildiğinde mevcut sıra kaydını kontrol et ve refresh başlat."""
+        self._check_existing_entry()
+        self._start_refresh()
+
+    def on_leave(self):
+        """Ekrandan çıkınca refresh durdur."""
+        self._stop_refresh()
+
+    def _check_existing_entry(self):
+        """Kullanıcının bu makine için zaten sırada olup olmadığını kontrol et."""
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", None)
+        if not user or not self._machine:
             return
-        if not self._machine:
-            return
-        self.join_btn.disabled = True
         Thread(
-            target=self._do_join,
-            args=(self._machine["id"], student_id),
+            target=self._fetch_existing,
+            args=(self._machine["id"], user["tc"]),
             daemon=True,
         ).start()
 
-    def _do_join(self, machine_id, student_id):
-        result, error = join_queue(machine_id, student_id)
-        Clock.schedule_once(lambda dt: self._on_join_result(result, error, student_id))
+    def _fetch_existing(self, machine_id, tc):
+        result, error = get_my_queue_entry(machine_id, tc)
+        Clock.schedule_once(lambda dt: self._on_existing_result(result, error))
 
-    def _on_join_result(self, result, error, student_id):
+    def _on_existing_result(self, result, error):
+        if error or not result:
+            return
+        entry = result.get("entry")
+        position = result.get("position")
+        if entry and position is not None:
+            self._my_queue_entry = entry
+            app = MDApp.get_running_app()
+            user = getattr(app, "current_user", {})
+            self.queue_pos_label.text = f"Your position: {position}"
+            self.queue_info_label.text = f"{user.get('ad', '')} {user.get('soyad', '')}"
+            self.queue_status_card.opacity = 1
+            self.join_btn.disabled = True
+
+    def _start_refresh(self):
+        self._stop_refresh()
+        self._refresh_event = Clock.schedule_interval(
+            lambda dt: self._refresh_position(), REFRESH_INTERVAL
+        )
+
+    def _stop_refresh(self):
+        if self._refresh_event:
+            self._refresh_event.cancel()
+            self._refresh_event = None
+
+    def _refresh_position(self):
+        """Sıra pozisyonunu sessizce güncelle (sadece sıradaysa)."""
+        if not self._my_queue_entry or not self._machine:
+            return
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", None)
+        if not user:
+            return
+        Thread(
+            target=self._fetch_refresh,
+            args=(self._machine["id"], user["tc"]),
+            daemon=True,
+        ).start()
+
+    def _fetch_refresh(self, machine_id, tc):
+        result, error = get_my_queue_entry(machine_id, tc)
+        Clock.schedule_once(lambda dt: self._on_refresh_result(result, error))
+
+    def _on_refresh_result(self, result, error):
+        if error or not result:
+            return
+        entry = result.get("entry")
+        position = result.get("position")
+        if entry and position is not None:
+            self._my_queue_entry = entry
+            self.queue_pos_label.text = f"Your position: {position}"
+        elif not entry and self._my_queue_entry:
+            # Sıra tamamlandı veya iptal edildi
+            self._my_queue_entry = None
+            self.queue_status_card.opacity = 0
+            self.join_btn.disabled = False
+
+    def _manual_refresh(self):
+        """Yenile butonuna basılınca makine durumu + sıra pozisyonu güncelle."""
+        if not self._machine:
+            return
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", None)
+        if not user:
+            return
+        Thread(
+            target=self._fetch_refresh_full,
+            args=(self._machine["id"], user["tc"]),
+            daemon=True,
+        ).start()
+
+    def _fetch_refresh_full(self, machine_id, tc):
+        from services.api import get_machine, get_my_queue_entry
+        machine = get_machine(machine_id)
+        entry_data, _ = get_my_queue_entry(machine_id, tc)
+        Clock.schedule_once(lambda dt: self._on_full_refresh(machine, entry_data))
+
+    def _on_full_refresh(self, machine, entry_data):
+        from components.machine_card import STATUS_LABELS
+        if machine:
+            status = machine.get("status", "")
+            self.machine_status_label.text = f"Status: {STATUS_LABELS.get(status, status)}"
+            self._machine = machine
+        if entry_data:
+            entry = entry_data.get("entry")
+            position = entry_data.get("position")
+            if entry and position is not None:
+                self._my_queue_entry = entry
+                self.queue_pos_label.text = f"Your position: {position}"
+                self.queue_status_card.opacity = 1
+                self.join_btn.disabled = True
+            elif not entry:
+                self._my_queue_entry = None
+                self.queue_status_card.opacity = 0
+                self.join_btn.disabled = False
+
+    def _snackbar(self, text):
+        toast(text)
+
+    def _on_join(self, *args):
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", None)
+        if not user:
+            self._snackbar("Please sign in first.")
+            return
+        if not self._machine:
+            return
+
+        self.join_btn.disabled = True
+        Thread(
+            target=self._do_join,
+            args=(self._machine["id"], user["tc"]),
+            daemon=True,
+        ).start()
+
+    def _do_join(self, machine_id, tc):
+        result, error = join_queue(machine_id, tc)
+        Clock.schedule_once(lambda dt: self._on_join_result(result, error))
+
+    def _on_join_result(self, result, error):
         if error:
-            Snackbar(text=f"Error: {error}").open()
+            self._snackbar(f"Error: {error}")
             self.join_btn.disabled = False
         else:
             self._my_queue_entry = result
             position = result.get("position", "?")
             self.queue_pos_label.text = f"Your position: {position}"
-            self.queue_info_label.text = f"Student: {student_id}"
+            app = MDApp.get_running_app()
+            user = getattr(app, "current_user", {})
+            self.queue_info_label.text = f"{user.get('ad', '')} {user.get('soyad', '')}"
             self.queue_status_card.opacity = 1
             self.join_btn.disabled = True
-            Snackbar(text="Successfully joined the queue!").open()
+            self._snackbar("Successfully joined the queue!")
 
     def _on_cancel(self, *args):
         if not self._my_queue_entry:
@@ -195,14 +344,16 @@ class QueueScreen(MDScreen):
     def _do_cancel(self, *args):
         self._dialog.dismiss()
         entry = self._my_queue_entry
+        app = MDApp.get_running_app()
+        user = getattr(app, "current_user", {})
         Thread(
             target=self._cancel_request,
-            args=(entry["id"], entry["student_id"]),
+            args=(entry["id"], user.get("tc", "")),
             daemon=True,
         ).start()
 
-    def _cancel_request(self, queue_id, student_id):
-        success, error = leave_queue(queue_id, student_id)
+    def _cancel_request(self, queue_id, tc):
+        success, error = leave_queue(queue_id, tc)
         Clock.schedule_once(lambda dt: self._on_cancel_result(success, error))
 
     def _on_cancel_result(self, success, error):
@@ -210,9 +361,10 @@ class QueueScreen(MDScreen):
             self._my_queue_entry = None
             self.queue_status_card.opacity = 0
             self.join_btn.disabled = False
-            Snackbar(text="Queue canceled.").open()
+            self._snackbar("Queue cancelled.")
         else:
-            Snackbar(text=f"Cancel failed: {error}").open()
+            self._snackbar(f"Cancel failed: {error}")
 
     def _go_back(self):
+        self._stop_refresh()
         self.manager.current = "machine_list"

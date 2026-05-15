@@ -3,6 +3,36 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 
+def register_user(tc, ad, soyad, telefon, sifre):
+    """Yeni kullanıcı kaydı. Başarıda (user_dict, None), hata durumunda (None, hata_mesajı)."""
+    try:
+        resp = requests.post(
+            f"{BASE_URL}/api/auth/register",
+            json={"tc": tc, "ad": ad, "soyad": soyad, "telefon": telefon, "sifre": sifre},
+            timeout=5,
+        )
+        if resp.status_code == 201:
+            return resp.json().get("user"), None
+        return None, resp.json().get("detail", "Kayıt başarısız")
+    except requests.RequestException as e:
+        return None, str(e)
+
+
+def login_user(tc, sifre):
+    """TC + şifre ile giriş yap. Başarıda (user_dict, None), hata durumunda (None, hata_mesajı)."""
+    try:
+        resp = requests.post(
+            f"{BASE_URL}/api/auth/login",
+            json={"tc": tc, "sifre": sifre},
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            return resp.json().get("user"), None
+        return None, resp.json().get("detail", "Giriş başarısız")
+    except requests.RequestException as e:
+        return None, str(e)
+
+
 def get_machines():
     """Tüm makineleri döndür. Hata durumunda boş liste."""
     try:
@@ -34,6 +64,20 @@ def join_queue(machine_id, student_id):
         if resp.status_code == 201:
             return resp.json(), None
         return None, resp.json().get("detail", "Bilinmeyen hata")
+    except requests.RequestException as e:
+        return None, str(e)
+
+
+def get_my_queue_entry(machine_id, tc):
+    """Kullanıcının bu makine için aktif sıra kaydını ve pozisyonunu döndür."""
+    try:
+        resp = requests.get(
+            f"{BASE_URL}/api/queue/my",
+            params={"machine_id": machine_id, "tc": tc},
+            timeout=5,
+        )
+        resp.raise_for_status()
+        return resp.json(), None
     except requests.RequestException as e:
         return None, str(e)
 

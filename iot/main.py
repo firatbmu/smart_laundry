@@ -77,7 +77,10 @@ def log_error(message):
 
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
+    wlan.active(False)
+    time.sleep(1)
     wlan.active(True)
+    time.sleep(1)  # WiFi modülünün tam olarak hazır olmasını bekle
 
     if wlan.isconnected():
         return wlan
@@ -99,6 +102,7 @@ def connect_wifi():
 
         print(f"Deneme {attempt} basarisiz. {RETRY_DELAY} saniye bekleniyor...")
         wlan.disconnect()
+        time.sleep(1)  # Disconnect sonrası modülün sıfırlanması için bekle
         time.sleep(RETRY_DELAY)
 
     led_off()  # Hata: LED sonsun

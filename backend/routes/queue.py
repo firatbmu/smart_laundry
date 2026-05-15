@@ -13,6 +13,34 @@ class QueueCreate(BaseModel):
     student_id: str
 
 
+@router.get("/my")
+def get_my_queue(machine_id: int, tc: str, db: Session = Depends(get_db)):
+    """Kullanıcının belirli bir makine için aktif sıra kaydını ve pozisyonunu döndür."""
+    machine = db.query(Machine).filter(Machine.id == machine_id).first()
+    if not machine:
+        raise HTTPException(status_code=404, detail="Makine bulunamadı")
+
+    entry = db.query(Queue).filter(
+        Queue.machine_id == machine_id,
+        Queue.student_id == tc,
+        Queue.status == "WAITING",
+    ).first()
+
+    if not entry:
+        return {"entry": None, "position": None}
+
+    position = (
+        db.query(Queue)
+        .filter(
+            Queue.machine_id == machine_id,
+            Queue.status == "WAITING",
+            Queue.created_at <= entry.created_at,
+        )
+        .count()
+    )
+    return {"entry": entry.to_dict(position=position), "position": position}
+
+
 @router.post("", status_code=201)
 def join_queue(body: QueueCreate, db: Session = Depends(get_db)):
     """Belirtilen makine için sıraya gir."""
@@ -29,7 +57,7 @@ def join_queue(body: QueueCreate, db: Session = Depends(get_db)):
     if already_waiting:
         raise HTTPException(
             status_code=400,
-            detail="Bu makine için zaten sıradasınız",
+            detail="You are already in the queue for this machine",
         )
 
     entry = Queue(machine_id=body.machine_id, student_id=body.student_id)
@@ -71,10 +99,10 @@ def get_machine_queue(machine_id: int, db: Session = Depends(get_db)):
 @router.delete("/{queue_id}")
 def leave_queue(
     queue_id: int,
-    student_id: str = Query(..., description="İptal eden öğrencinin numarası"),
+    student_id: str = Query(..., description="National ID of the user cancelling"),
     db: Session = Depends(get_db),
 ):
-    """Sıra kaydını iptal et (sadece kaydın sahibi iptal edebilir)."""
+    """Cancel a queue entry (only the owner can cancel their own entry)."""
     entry = db.query(Queue).filter(Queue.id == queue_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Sıra kaydı bulunamadı")
